@@ -139,16 +139,24 @@ async def run(loop, lh_macs):
 		print(" ")
 		for mac in lh_macs:
 			print(">> Trying to connect to BLE MAC '"+ mac +"'...")
-			try:
-				client = BleakClient(mac, loop=loop)
-				await client.connect()
-				print(">> '"+ mac +"' connected...")
-				await client.write_gatt_char(__PWR_CHARACTERISTIC, __PWR_ON if command=="on" else __PWR_STANDBY)
-				print(">> LH switched to '"+ command +"' successfully... ")
-				await client.disconnect()
-				print(">> disconnected. ")
-			except Exception as e:
-				print(">> ERROR: "+ str(e))
+			max_tries = 10
+			try_count = 0
+			success = False
+			for try_count in range(0, max_tries):
+				try:
+					client = BleakClient(mac, loop=loop)
+					await client.connect()
+					print(">> '"+ mac +"' connected...")
+					await client.write_gatt_char(__PWR_CHARACTERISTIC, __PWR_ON if command=="on" else __PWR_STANDBY)
+					print(">> LH switched to '"+ command +"' successfully... ")
+					await client.disconnect()
+					print(">> disconnected. ")
+					success = True
+					break
+				except Exception as e:
+					print(">> ERROR: "+ str(e))
+			if not success:
+				print("Reached max tries ({}).".format(max_tries))
 			print(" ")
 
 loop = asyncio.get_event_loop()
